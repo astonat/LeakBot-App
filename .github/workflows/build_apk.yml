@@ -36,11 +36,10 @@ jobs:
             cp -f android_custom/MainActivity.kt android/app/src/main/kotlin/com/example/leakbot_oled_mobile/MainActivity.kt
           fi
 
-          # 1. Update app-level build file for SDK 36
+          # Update compileSdk to 36 for file_picker
           find android/app/ -name "build.gradle*" -exec sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = 36/g' {} +
           find android/app/ -name "build.gradle*" -exec sed -i 's/compileSdkVersion flutter.compileSdkVersion/compileSdkVersion 36/g' {} +
 
-          # 2. Force all plugin subprojects (like file_picker) to compile with SDK 36
           cat << 'EOF' >> android/build.gradle
           subprojects {
               afterEvaluate { project ->
@@ -55,10 +54,19 @@ jobs:
           EOF
 
           flutter pub get
-          flutter build apk --release
+
+          # Build release APK directly via Gradle
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleRelease
+          cd ..
+
+          # Create a unified release directory
+          mkdir -p output_apk
+          find . -name "*release*.apk" -exec cp {} output_apk/app-release.apk \;
 
       - name: Upload Compiled APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: LeakBot-OLED-Android-APK
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: output_apk/app-release.apk
