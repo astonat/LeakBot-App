@@ -28,18 +28,18 @@ jobs:
           if [ -d "LeakBot_Flutter_App" ]; then
             cp -r LeakBot_Flutter_App/* .
           fi
-          
+
           flutter create --org com.example --project-name leakbot_oled_mobile .
-          
+
           if [ -d "android_custom" ]; then
             cp -f android_custom/AndroidManifest.xml android/app/src/main/AndroidManifest.xml
             cp -f android_custom/MainActivity.kt android/app/src/main/kotlin/com/example/leakbot_oled_mobile/MainActivity.kt
           fi
-          
-          # FIX: Force Android SDK 36 for file_picker plugin
-          sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = 36/g' android/app/build.gradle
-          sed -i 's/compileSdkVersion flutter.compileSdkVersion/compileSdkVersion 36/g' android/app/build.gradle
-          
+
+          # Target both .gradle and .gradle.kts templates for compileSdk 36
+          find android/app/ -name "build.gradle*" -exec sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = 36/g' {} +
+          find android/app/ -name "build.gradle*" -exec sed -i 's/compileSdkVersion flutter.compileSdkVersion/compileSdkVersion 36/g' {} +
+
           flutter pub get
           flutter build apk --release
 
