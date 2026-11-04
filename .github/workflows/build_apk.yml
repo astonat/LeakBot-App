@@ -36,9 +36,23 @@ jobs:
             cp -f android_custom/MainActivity.kt android/app/src/main/kotlin/com/example/leakbot_oled_mobile/MainActivity.kt
           fi
 
-          # Target both .gradle and .gradle.kts templates for compileSdk 36
+          # 1. Update app-level build file for SDK 36
           find android/app/ -name "build.gradle*" -exec sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = 36/g' {} +
           find android/app/ -name "build.gradle*" -exec sed -i 's/compileSdkVersion flutter.compileSdkVersion/compileSdkVersion 36/g' {} +
+
+          # 2. Force all plugin subprojects (like file_picker) to compile with SDK 36
+          cat << 'EOF' >> android/build.gradle
+          subprojects {
+              afterEvaluate { project ->
+                  if (project.hasProperty('android')) {
+                      project.android {
+                          compileSdkVersion 36
+                          compileSdk 36
+                      }
+                  }
+              }
+          }
+          EOF
 
           flutter pub get
           flutter build apk --release
