@@ -1,0 +1,44 @@
+name: Build LeakBot OLED Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Initialize Flutter project skeleton & overlay LeakBot files
+        run: |
+          # If the files were placed in a subfolder, bring them to the root
+          if [ -d "LeakBot_Flutter_App" ]; then
+            cp -r LeakBot_Flutter_App/* .
+          fi
+          flutter create --org com.example --project-name leakbot_oled_mobile .
+          if [ -d "android_custom" ]; then
+            cp -f android_custom/AndroidManifest.xml android/app/src/main/AndroidManifest.xml
+            cp -f android_custom/MainActivity.kt android/app/src/main/kotlin/com/example/leakbot_oled_mobile/MainActivity.kt
+          fi
+          flutter pub get
+          flutter build apk --release
+
+      - name: Upload Compiled APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: LeakBot-OLED-Android-APK
+          path: build/app/outputs/flutter-apk/app-release.apk
